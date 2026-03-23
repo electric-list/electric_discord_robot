@@ -8,3 +8,5 @@
 /rank_config.json
 /style_config.json
 /__pycache__
+bot_settings.json
+*/__pycache__
