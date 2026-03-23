@@ -12,7 +12,7 @@ from bot_commands.progression_commands import register_progression_commands
 from bot_commands.request_commands import register_request_commands
 from errorhandling import register_error_handlers
 
-# Load style before command registration so jokes and templates are available at startup.
+# Load style before command registration so jokes and templates are available at startupp.
 styles.load_from_config()
 
 # TODO
