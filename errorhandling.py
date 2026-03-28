@@ -48,4 +48,4 @@ def register_tree_guild_filter(client, allowed_guild_id: int | None):
             return True
         raise IgnoredGuildInteraction()
 
-    client.tree.add_check(_guild_filter)
+    client.tree.interaction_check = _guild_filter
