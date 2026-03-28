@@ -473,7 +473,7 @@ def register_progression_commands(client, admin_group_getter, common_group_gette
             await interaction.response.send_message("Guild not available.", ephemeral=True)
             return
 
-        await interaction.response.defer()
+        await interaction.response.defer(ephemeral=True)
 
         if member is not None:
             data = core.load_stats()
@@ -491,7 +491,8 @@ def register_progression_commands(client, admin_group_getter, common_group_gette
                     pass
             rank_display = f"<@&{new_rank_id}>" if new_rank_id else "Unranked"
             await interaction.followup.send(
-                f"Synced rank for {member.mention}. Current rank: {rank_display}."
+                f"Synced rank for {member.mention}. Current rank: {rank_display}.",
+                ephemeral=True,
             )
             return
 
@@ -536,7 +537,8 @@ def register_progression_commands(client, admin_group_getter, common_group_gette
 
         core.save_stats(data)
         await interaction.followup.send(
-            f"Synced ranks for {checked} tracked member(s). Updated role state for {updated} member(s)."
+            f"Synced ranks for {checked} tracked member(s). Updated role state for {updated} member(s).",
+            ephemeral=True,
         )
 
     async def autocomplete_recent_sends(
@@ -600,6 +602,7 @@ def register_progression_commands(client, admin_group_getter, common_group_gette
             return
 
         current_rank_display = "Unranked"
+        member = None
         if interaction.guild is not None and updated_stats is not None:
             member = interaction.guild.get_member(user_id)
             if member is None:
@@ -613,7 +616,13 @@ def register_progression_commands(client, admin_group_getter, common_group_gette
                 current_rank_display = f"<@&{int(rank_id)}>" if rank_id else "Unranked"
 
         removed_display = f"${float(removed_amount or 0.0):.2f}"
-        message = f"Removed send of {removed_display} successfully. Current rank: {current_rank_display}."
+        if member is not None:
+            target_display = member.mention
+        elif updated_stats is not None and updated_stats.get("display_name"):
+            target_display = str(updated_stats["display_name"])
+        else:
+            target_display = f"user {user_id}"
+        message = f"Removed send of {removed_display} from {target_display} successfully. Current rank: {current_rank_display}."
         await send_tribute_result(interaction, message)
 
     return {

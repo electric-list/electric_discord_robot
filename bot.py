@@ -31,7 +31,7 @@ class JordansBot(commands.Bot):
         # Reload style and settings/ranks, then register persistent views.
         styles.load_from_config()
         core.initialize_runtime_state()
-        core.restore_persistent_views(self)
+        await core.restore_persistent_views(self)
 
 
 client = JordansBot(command_prefix="!", intents=intents)

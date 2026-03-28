@@ -476,6 +476,7 @@ def save_pending_views(data: dict):
 
 def add_pending_game_view(
     message_id: int,
+    channel_id: int | None,
     target_user_id: int,
     amount: float,
     source: str,
@@ -484,6 +485,7 @@ def add_pending_game_view(
 ):
     data = load_pending_views()
     data["game"][str(message_id)] = {
+        "channel_id": int(channel_id) if channel_id is not None else None,
         "target_user_id": int(target_user_id),
         "amount": float(amount),
         "source": source,
@@ -519,6 +521,7 @@ def set_pending_game_recorded(message_id: int, recorded: bool):
 
 def add_pending_sub_claim_view(
     message_id: int,
+    channel_id: int | None,
     requester_id: int,
     amount: float,
     note: str | None,
@@ -531,6 +534,7 @@ def add_pending_sub_claim_view(
 ):
     data = load_pending_views()
     data["sub_claim"][str(message_id)] = {
+        "channel_id": int(channel_id) if channel_id is not None else None,
         "requester_id": int(requester_id),
         "amount": float(amount),
         "note": note,
@@ -546,6 +550,7 @@ def add_pending_sub_claim_view(
 
 def add_pending_request_view(
     message_id: int,
+    channel_id: int | None,
     requester_mention: str,
     requested_amount: float,
     target_text: str,
@@ -557,6 +562,7 @@ def add_pending_request_view(
 ):
     data = load_pending_views()
     data["request"][str(message_id)] = {
+        "channel_id": int(channel_id) if channel_id is not None else None,
         "requester_mention": str(requester_mention),
         "requested_amount": float(requested_amount),
         "target_text": str(target_text),
@@ -576,6 +582,28 @@ def remove_pending_view(message_id: int, view_type: str):
     if key in bucket:
         del bucket[key]
         save_pending_views(data)
+
+
+async def _pending_message_exists(client: discord.Client, message_id: int, channel_id: int | None) -> bool:
+    if channel_id is None:
+        # Legacy entries without channel IDs cannot be verified safely.
+        return True
+
+    channel = client.get_channel(channel_id)
+    if channel is None:
+        try:
+            channel = await client.fetch_channel(channel_id)
+        except (discord.NotFound, discord.Forbidden, discord.HTTPException):
+            return False
+
+    if not isinstance(channel, (discord.TextChannel, discord.Thread, discord.VoiceChannel)):
+        return False
+
+    try:
+        await channel.fetch_message(message_id)
+        return True
+    except (discord.NotFound, discord.Forbidden, discord.HTTPException):
+        return False
 
 
 def normalize_user_stats_shape(stats: dict) -> dict:
@@ -899,6 +927,8 @@ async def register_send_event(
         "rank": f"<@&{target_rank_id}>" if target_rank_id > 0 else "Unranked",
         "removed_ranks": removed_ranks,
         "rank_changed": rank_changed,
+        "princess_user_id": princess_member.id if princess_member is not None else None,
+        "princess_display_name": princess_member.display_name if princess_member is not None else None,
     }
 
 
@@ -919,7 +949,7 @@ def has_any_role_id(member: discord.Member, role_ids: list[int]) -> bool:
     return any(int(role_id) in member_role_ids for role_id in role_ids)
 
 
-def format_record_result(member: discord.Member, amount: float, source: str, result: dict) -> str:
+def format_record_result(member: discord.Member, amount: float, source: str, result: dict, include_noted_for: bool = True) -> str:
     kit = styles.get()
     source_suffix = "" if source.strip().lower() == "manual" else f" via {source}"
     if amount >= 0:
@@ -938,13 +968,24 @@ def format_record_result(member: discord.Member, amount: float, source: str, res
             kit.tpl_tribute_negative.format(
                 mention=member.mention,
                 adj_amount=abs(amount),
-                source_suffix=source_suffix,
+                source_suffix="",
                 removed_amount=removed_amount,
             ),
         ]
         if remaining_adjustment > 0:
             lines.append(kit.tpl_tribute_negative_remainder.format(remaining=remaining_adjustment))
         lines.append(kit.tpl_tribute_negative_rank.format(rank=result["rank"]))
+
+    princess_user_id = result.get("princess_user_id")
+    princess_display_name = result.get("princess_display_name")
+    if include_noted_for and (princess_user_id is not None or princess_display_name):
+        princess_display = (
+            f"<@{int(princess_user_id)}>"
+            if princess_user_id is not None
+            else str(princess_display_name)
+        )
+        lines.append(kit.tpl_noted_for.format(princess=princess_display))
+
     if result.get("role_sync_failed"):
         lines.append(kit.tpl_tribute_role_warning)
     return "\n".join(lines)
@@ -993,6 +1034,8 @@ class RecordSendFromGameView(discord.ui.View):
             )
             return
 
+        is_admin = has_any_role_id(interaction.user, get_access_role_ids("admin"))
+
         # If the message has princess attribution, only that selected princess can record it.
         if self.princess_user_id is not None and interaction.user.id != self.princess_user_id:
             await interaction.response.send_message(
@@ -1001,8 +1044,16 @@ class RecordSendFromGameView(discord.ui.View):
             )
             return
 
+        # Ensure the selected approver still has the princess role.
+        if self.princess_user_id is not None and not is_princess_member(interaction.user):
+            await interaction.response.send_message(
+                "Only a member with the princess role can record this send.",
+                ephemeral=True,
+            )
+            return
+
         # Backward compatibility for older pending messages that do not have a princess.
-        if self.princess_user_id is None and not has_any_role_id(interaction.user, get_access_role_ids("admin")):
+        if self.princess_user_id is None and not is_admin:
             await interaction.response.send_message(
                 "Only members with an admin access role can use this button.",
                 ephemeral=True,
@@ -1044,16 +1095,10 @@ class RecordSendFromGameView(discord.ui.View):
 
         result = await register_send_event(member, self.amount, self.source, princess_member=princess_member)
         self.recorded = True
-        self.disable_record_button()
 
         if interaction.message is not None:
-            set_pending_game_recorded(interaction.message.id, True)
-            update_pending_game_princess(
-                interaction.message.id,
-                princess_member.id if princess_member is not None else None,
-                princess_member.display_name if princess_member is not None else self.princess_display_name,
-            )
-            await interaction.message.edit(view=self)
+            remove_pending_view(interaction.message.id, "game")
+            await interaction.message.edit(view=None)
 
         base_message = format_record_result(member, self.amount, self.source, result)
         kit = styles.get()
@@ -1218,6 +1263,7 @@ class SendProofModal(discord.ui.Modal):
         
         add_pending_sub_claim_view(
             sent_message.id,
+            sent_message.channel.id,
             interaction.user.id,
             amount,
             proof,
@@ -1411,7 +1457,7 @@ class SubSendClaimView(discord.ui.View):
                 item=self.reimbursement_item,
             )
         else:
-            base_message = format_record_result(requester, self.amount, self.platform, result)
+            base_message = format_record_result(requester, self.amount, self.platform, result, include_noted_for=False)
         tributes_msg = f"{base_message}{kit.tpl_approved_by.format(approver=interaction.user.mention)}"
         await post_tributes_message(interaction.guild, tributes_msg)
         
@@ -1465,12 +1511,16 @@ class SubSendClaimView(discord.ui.View):
         await interaction.response.defer()
 
 
-def restore_persistent_views(client: discord.Client):
+async def restore_persistent_views(client: discord.Client):
     pending = load_pending_views()
+    pending_changed = False
 
-    for message_id_str, payload in pending.get("game", {}).items():
+    for message_id_str, payload in list(pending.get("game", {}).items()):
         try:
             message_id = int(message_id_str)
+            channel_id = payload.get("channel_id")
+            if channel_id is not None:
+                channel_id = int(channel_id)
             target_user_id = int(payload["target_user_id"])
             amount = float(payload["amount"])
             source = str(payload["source"])
@@ -1482,6 +1532,13 @@ def restore_persistent_views(client: discord.Client):
             if princess_display_name is not None:
                 princess_display_name = str(princess_display_name)
         except (KeyError, ValueError, TypeError):
+            del pending["game"][message_id_str]
+            pending_changed = True
+            continue
+
+        if not await _pending_message_exists(client, message_id, channel_id):
+            del pending["game"][message_id_str]
+            pending_changed = True
             continue
 
         view = RecordSendFromGameView(
@@ -1494,9 +1551,12 @@ def restore_persistent_views(client: discord.Client):
         )
         client.add_view(view, message_id=message_id)
 
-    for message_id_str, payload in pending.get("sub_claim", {}).items():
+    for message_id_str, payload in list(pending.get("sub_claim", {}).items()):
         try:
             message_id = int(message_id_str)
+            channel_id = payload.get("channel_id")
+            if channel_id is not None:
+                channel_id = int(channel_id)
             requester_id = int(payload["requester_id"])
             amount = float(payload["amount"])
             note = payload.get("note")
@@ -1519,6 +1579,13 @@ def restore_persistent_views(client: discord.Client):
             if princess_display_name is not None:
                 princess_display_name = str(princess_display_name)
         except (KeyError, ValueError, TypeError):
+            del pending["sub_claim"][message_id_str]
+            pending_changed = True
+            continue
+
+        if not await _pending_message_exists(client, message_id, channel_id):
+            del pending["sub_claim"][message_id_str]
+            pending_changed = True
             continue
 
         view = SubSendClaimView(
@@ -1534,9 +1601,12 @@ def restore_persistent_views(client: discord.Client):
         )
         client.add_view(view, message_id=message_id)
 
-    for message_id_str, payload in pending.get("request", {}).items():
+    for message_id_str, payload in list(pending.get("request", {}).items()):
         try:
             message_id = int(message_id_str)
+            channel_id = payload.get("channel_id")
+            if channel_id is not None:
+                channel_id = int(channel_id)
             requester_mention = str(payload["requester_mention"])
             requested_amount = float(payload["requested_amount"])
             target_text = str(payload.get("target_text", ""))
@@ -1556,6 +1626,13 @@ def restore_persistent_views(client: discord.Client):
             if princess_display_name is not None:
                 princess_display_name = str(princess_display_name)
         except (KeyError, ValueError, TypeError):
+            del pending["request"][message_id_str]
+            pending_changed = True
+            continue
+
+        if not await _pending_message_exists(client, message_id, channel_id):
+            del pending["request"][message_id_str]
+            pending_changed = True
             continue
 
         view = RequestView(
@@ -1569,6 +1646,9 @@ def restore_persistent_views(client: discord.Client):
             princess_display_name,
         )
         client.add_view(view, message_id=message_id)
+
+    if pending_changed:
+        save_pending_views(pending)
 
 
 def _draw_centered_text(draw: ImageDraw.ImageDraw, xy: tuple[int, int], text: str, font: ImageFont.ImageFont, fill: tuple[int, int, int]):

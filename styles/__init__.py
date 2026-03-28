@@ -59,6 +59,7 @@ class StylePack:
 
     # Approved-by suffix appended to approval tributes messages
     tpl_approved_by: str                # {approver}
+    tpl_noted_for: str                  # {princess}
 
     # Source labels appended after game Record button tribute message
     tpl_game_source_dice: str           # prepended \n, no placeholders

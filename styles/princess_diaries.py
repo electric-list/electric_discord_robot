@@ -54,7 +54,7 @@ kit = StylePack(
     modal_send_proof_title="📋 Tribute Confirmation",
     modal_amount_label="How much did you send, little one?",
     modal_amount_placeholder="e.g., 100.00",
-    modal_note_label="Anything to confess?",
+    modal_note_label="Anything to confess? (send note)",
     modal_note_placeholder="Optional note",
     modal_platform_label="Where did you send?",
     modal_platform_placeholder="e.g., wishtender, throne, cashapp",
@@ -76,24 +76,25 @@ kit = StylePack(
         "💳 {mention} paid the simp fee — **${amount:.2f}** via **{platform}** for **{item}**! 💅",
         "👑 Reimbursement complete: {mention} sent **${amount:.2f}** on **{platform}** for **{item}**.",
         "✨ Princess accounting update: {mention} covered **{item}** with **${amount:.2f}** via **{platform}**.",
-        "💸 {mention} handled **{item}**: **${amount:.2f}** through **{platform}**. Balance restored.",
+        "💸 {mention} handled **{item}**: **${amount:.2f}** through **{platform}**. Yay!",
     ],
-    tpl_approved_by="\n-# 👑 Noted by {approver}.",
+    tpl_approved_by="\n-# :pencil2: Noted by {approver}.",
+    tpl_noted_for="-# :pencil2: Noted by {princess}.",
 
     # ── Game source labels ────────────────────────────────────────────────────
     tpl_game_source_dice="\n🎲 From the simp dice roll.",
     tpl_game_source_wheelspin="\n🎡 From the Princess's wheel of fate.",
 
     # ── Request / sub-sent templates ──────────────────────────────────────────
-    tpl_request_send="👑 **Princess Ping**: {mention} requests a tribute of **${amount:.2f}**{target_text}.{note_text}",
-    tpl_request_reimburse="💳 **Princess IOU**: {mention} is owed **${amount:.2f}** for **{item}**{target_text}.{note_text}",
+    tpl_request_send="👑 **Princess Request**: {mention} requests a tribute of **${amount:.2f}**{target_text}.{note_text}",
+    tpl_request_reimburse="💳 **Princess Reimbursement**: {mention} is owed **${amount:.2f}** for **{item}**{target_text}.{note_text}",
     tpl_sub_sent="🙇 {mention} humbly claims to have sent **${amount:.2f}** via **{platform}** and awaits the Princess's acknowledgment.{note_text}",
     tpl_claim_sent="🙇 {mention} says they sent **${amount:.2f}** via **{platform}**{request_context}.{proof_text}",
     tpl_claim_reimburse="💳 {mention} says they reimbursed **{item}** with a **${amount:.2f}** send via **{platform}**{request_context}.{proof_text}",
 
     # ── Game result templates ─────────────────────────────────────────────────
     tpl_dice_result="🎲 {mention} rolled the simp dice for {princess_mention} **({formula})**. Base **{base_sum}** → tribute due: **${total:.2f}** 💸",
-    tpl_wheel_result="🎡 {mention} spun the loser wheel of fate for {princess_mention} and owes **${result}** 💅",
+    tpl_wheel_result="🎡 {mention} spun the loser wheel of fate for {princess_mention} in range **[{wheel_range}]** and owes **${result}** 💅",
 
     # ── Progress embed ────────────────────────────────────────────────────────
     embed_progress_color=0xFFB6C1,      # light pink

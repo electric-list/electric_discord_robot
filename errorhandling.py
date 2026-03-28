@@ -31,7 +31,8 @@ def register_tree_error_handler(client, send_interaction_error):
             return
 
         if isinstance(error, app_commands.CheckFailure):
-            await send_interaction_error(interaction, str(error))
+            # Command-level handlers already respond for normal permission/check failures.
+            # Stay silent here to avoid duplicate ephemeral responses.
             return
 
         await send_interaction_error(

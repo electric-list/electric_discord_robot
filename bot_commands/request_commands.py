@@ -82,6 +82,7 @@ def register_request_commands(client, admin_group_getter, common_group_getter):
         sent_message = await interaction.original_response()
         core.add_pending_request_view(
             sent_message.id,
+            sent_message.channel.id,
             interaction.user.mention,
             amount,
             target_text,
@@ -168,6 +169,7 @@ def register_request_commands(client, admin_group_getter, common_group_getter):
         sent_message = await interaction.original_response()
         core.add_pending_sub_claim_view(
             sent_message.id,
+            sent_message.channel.id,
             interaction.user.id,
             float(amount),
             note,

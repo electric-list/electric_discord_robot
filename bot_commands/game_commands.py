@@ -92,6 +92,10 @@ def register_game_commands(
         base_sum = sum(final_rolls)
         modified_sum = base_sum * float(multiplier)
         total = round(modified_sum + float(additive_modifier), 2)
+        if float(additive_modifier) >= 0:
+            modifier_text = f"+ {float(additive_modifier):g}"
+        else:
+            modifier_text = f"- {abs(float(additive_modifier)):g}"
         gif_buffer = core.build_dice_roll_gif(
             int(dice_count),
             sides,
@@ -115,7 +119,7 @@ def register_game_commands(
                 mention=interaction.user.mention,
                 princess_mention=princess_member.mention,
                 princess_name=princess_member.display_name,
-                formula=f"{dice_count}d{sides} x {float(multiplier):g} {float(additive_modifier):+g}",
+                formula=f"{dice_count}d{sides} x {float(multiplier):g} {modifier_text}",
                 base_sum=base_sum,
                 total=total,
             ),
@@ -125,6 +129,7 @@ def register_game_commands(
         )
         core.add_pending_game_view(
             sent_message.id,
+            sent_message.channel.id,
             interaction.user.id,
             float(total),
             "dice",
@@ -190,6 +195,7 @@ def register_game_commands(
                 princess_mention=princess_member.mention,
                 princess_name=princess_member.display_name,
                 result=result,
+                wheel_range=f"{minimum}-{maximum}",
             ),
             file=file,
             view=view,
@@ -197,6 +203,7 @@ def register_game_commands(
         )
         core.add_pending_game_view(
             sent_message.id,
+            sent_message.channel.id,
             interaction.user.id,
             float(result),
             "wheelspin",
