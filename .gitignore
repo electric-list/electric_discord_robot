@@ -10,3 +10,8 @@
 /__pycache__
 bot_settings.json
 */__pycache__
+discordserverbackup-11ca9abaa5f0.json
+client_secret.json
+.cache/gdrive_token.json
+bot_commands/__pycache__
+styles/__pycache__

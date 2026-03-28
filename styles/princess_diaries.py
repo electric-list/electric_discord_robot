@@ -14,11 +14,9 @@ kit = StylePack(
     jokes=[
         "Why does a simp check their bank account every morning? To see how much devotion they have left. 💸",
         "My sub said 'sorry for the late tribute'. I said I don't accept apologies — I accept late fees. 👑",
-        "The WiFi password is one sent tribute per character. Good luck. 💅",
         "A sub asked me what I want for my birthday. I handed him a payment link. 🎂",
         "My sub said he's trying to find himself. I said try looking in your bank app under recent transactions. 💳",
         "They say love is priceless. Cute theory. Open your wallet. 💸",
-        "My sub asked if I love him. I said I love what he does. He smiled. I meant the tributes. 🎀",
         "A simp's favorite fantasy is being financially useful. Dream responsibly. 💅",
         "I asked my sub for a gift. He asked what I wanted. I said start with your dignity and work up from there. 👑",
         "My sub said he'd walk through fire for me. I said the payment portal only requires a card number. 💳",
@@ -26,21 +24,20 @@ kit = StylePack(
         "My bank account is basically a group chat — it only gets interesting when subs check in. 📱",
         "He said he'd do anything for me. I opened the tribute page. He said 'within reason'. Cute. 💅",
         "My sub asked if I think about him. I said yes, usually when payday hits and I check my balance. 👑",
-        "Love is patient. Love is kind. Love is also a tribute of at least $30. 💗",
-        "I don't keep receipts out of sentimentality. I keep them for tax purposes. 💳",
+        "Love is patient. Love is kind. Love is also a tribute of at least $50. 💗",
         "My sub learned the word 'boundary' and then forgot it the moment I posted a wishlist. 🎀",
         "The princess life chose me. The tribute life chose you. We both got what we deserved. 💸",
     ],
 
     # ── Rank-up ───────────────────────────────────────────────────────────────
     rank_up_messages=[
-        "{mention} just proved they're slightly less disappointing 💅 The court acknowledges.",
+        "{mention} just proved they're slightly more worthy 💅 The court acknowledges.",
         "Oh? {mention} is actually stepping up? How... expected. But appreciated. 👑",
-        "✨ {mention} has ascended to a new rank! The Princess is briefly impressed.",
+        "✨ {mention} has ascended to a new rank! The Princesses are briefly impressed.",
         "Look who finally unlocked a better title — {mention}! Don't let it go to your wallet. 💗",
         "{mention} just earned a higher rank. Adorable effort 🎀 Keep sending.",
-        "The Princess has noticed {mention} climbing the ranks. Try harder. 💅",
-        "✨ Oh, a new rank for {mention}! The Princess is... mildly pleased. Maybe.",
+        "The Princesses have noticed {mention} climbing the ranks. Good job. 💅",
+        "✨ {mention} has begun a new chapter in their diary! Let's fill it with many entries. 👑",
     ],
     rank_up_tier_change="{old} ✦ {new}",
 
@@ -63,14 +60,24 @@ kit = StylePack(
     modal_platform_placeholder="e.g., wishtender, throne, cashapp",
 
     # ── Tribute / record result templates ─────────────────────────────────────
-    tpl_tribute_positive="💸 {mention} sent **${amount:.2f}**{source_suffix} into the simp tax jar! The Princess accepts 👑",
+    tpl_tribute_positive=[
+        "💸 {mention} sent **${amount:.2f}**{source_suffix} into the simp tax jar! The Princesses accept 👑",
+        "✨ Tribute received: {mention} sent **${amount:.2f}**{source_suffix}. The Princesses are pleased. 💅",
+        "👑 Good sub behavior from {mention}: **${amount:.2f}**{source_suffix} delivered on command.",
+        "💗 {mention} just paid **${amount:.2f}**{source_suffix}. Devotion noted in the diary.",
+    ],
     tpl_tribute_negative="Adjusted {mention} by -${adj_amount:.2f}{source_suffix}. ${removed_amount:.2f} removed from the loser ledger.",
     tpl_tribute_negative_remainder="${remaining:.2f} could not be applied — not enough recorded sends.",
     tpl_tribute_negative_rank="Current standing: {rank}",
     tpl_tribute_role_warning="⚠️ Could not assign rank role — the bot's role may need to be moved higher in the server role list.",
 
     # ── Approval templates ────────────────────────────────────────────────────
-    tpl_approval_reimburse="💳 {mention} repaid the simp debt — **${amount:.2f}** via **{platform}** for **{item}**! Debt cleared. 💅",
+    tpl_approval_reimburse=[
+        "💳 {mention} paid the simp fee — **${amount:.2f}** via **{platform}** for **{item}**! 💅",
+        "👑 Reimbursement complete: {mention} sent **${amount:.2f}** on **{platform}** for **{item}**.",
+        "✨ Princess accounting update: {mention} covered **{item}** with **${amount:.2f}** via **{platform}**.",
+        "💸 {mention} handled **{item}**: **${amount:.2f}** through **{platform}**. Balance restored.",
+    ],
     tpl_approved_by="\n-# 👑 Noted by {approver}.",
 
     # ── Game source labels ────────────────────────────────────────────────────
@@ -85,8 +92,8 @@ kit = StylePack(
     tpl_claim_reimburse="💳 {mention} says they reimbursed **{item}** with a **${amount:.2f}** send via **{platform}**{request_context}.{proof_text}",
 
     # ── Game result templates ─────────────────────────────────────────────────
-    tpl_dice_result="🎲 {mention} rolled the simp dice **({formula})**. Base **{base_sum}** → tribute due: **${total:.2f}** 💸",
-    tpl_wheel_result="🎡 {mention} spun the loser wheel of fate and owes **${result}** 💅",
+    tpl_dice_result="🎲 {mention} rolled the simp dice for {princess_mention} **({formula})**. Base **{base_sum}** → tribute due: **${total:.2f}** 💸",
+    tpl_wheel_result="🎡 {mention} spun the loser wheel of fate for {princess_mention} and owes **${result}** 💅",
 
     # ── Progress embed ────────────────────────────────────────────────────────
     embed_progress_color=0xFFB6C1,      # light pink

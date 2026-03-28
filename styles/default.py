@@ -81,8 +81,8 @@ kit = StylePack(
     tpl_claim_reimburse="{mention} says they reimbursed {item} with a {amount:.2f} send via {platform}{request_context}.{proof_text}",
 
     # ── Game result templates ─────────────────────────────────────────────────
-    tpl_dice_result="{mention} rolled **({formula})**. Base **{base_sum}** -> final **{total:.2f}**",
-    tpl_wheel_result="{mention} has spun the wheel and landed on **{result}**.",
+    tpl_dice_result="{mention} rolled **({formula})** for {princess_mention}. Base **{base_sum}** -> final **{total:.2f}**",
+    tpl_wheel_result="{mention} spun the wheel for {princess_mention} and landed on **{result}**.",
 
     # ── Progress embed ────────────────────────────────────────────────────────
     embed_progress_color=0xFAA61A,      # discord gold

@@ -9,6 +9,7 @@ from pathlib import Path
 import discord
 from discord import app_commands
 from PIL import Image, ImageDraw, ImageFont
+from backup_google_drive import manager as backup_manager
 import styles
 
 
@@ -855,6 +856,7 @@ async def register_send_event(
             stats["send_history"] = send_history[-10000:]
 
         save_stats(data)
+        await backup_manager.note_send_and_maybe_backup(stats_file)
     else:
         removed_amount, remaining_adjustment, updated_stats = apply_negative_send_adjustment(member.id, abs(amount))
         if updated_stats is not None:
@@ -922,7 +924,12 @@ def format_record_result(member: discord.Member, amount: float, source: str, res
     source_suffix = "" if source.strip().lower() == "manual" else f" via {source}"
     if amount >= 0:
         lines = [
-            kit.tpl_tribute_positive.format(mention=member.mention, amount=amount, source_suffix=source_suffix),
+            styles.render_template(
+                kit.tpl_tribute_positive,
+                mention=member.mention,
+                amount=amount,
+                source_suffix=source_suffix,
+            ),
         ]
     else:
         removed_amount = float(result.get("removed_amount", 0.0))
@@ -979,7 +986,23 @@ class RecordSendFromGameView(discord.ui.View):
     async def record_send_button(
         self, interaction: discord.Interaction, _button: discord.ui.Button
     ):
-        if not isinstance(interaction.user, discord.Member) or not has_any_role_id(interaction.user, get_access_role_ids("admin")):
+        if not isinstance(interaction.user, discord.Member):
+            await interaction.response.send_message(
+                "Only server members can use this button.",
+                ephemeral=True,
+            )
+            return
+
+        # If the message has princess attribution, only that selected princess can record it.
+        if self.princess_user_id is not None and interaction.user.id != self.princess_user_id:
+            await interaction.response.send_message(
+                "Only the selected princess can record this send.",
+                ephemeral=True,
+            )
+            return
+
+        # Backward compatibility for older pending messages that do not have a princess.
+        if self.princess_user_id is None and not has_any_role_id(interaction.user, get_access_role_ids("admin")):
             await interaction.response.send_message(
                 "Only members with an admin access role can use this button.",
                 ephemeral=True,
@@ -1380,7 +1403,8 @@ class SubSendClaimView(discord.ui.View):
         # Post to tributes using reimbursement text when applicable.
         kit = styles.get()
         if self.reimbursement_item:
-            base_message = kit.tpl_approval_reimburse.format(
+            base_message = styles.render_template(
+                kit.tpl_approval_reimburse,
                 mention=requester.mention,
                 amount=self.amount,
                 platform=self.platform,

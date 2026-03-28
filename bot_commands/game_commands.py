@@ -113,6 +113,8 @@ def register_game_commands(
         sent_message = await interaction.followup.send(
             content=styles.get().tpl_dice_result.format(
                 mention=interaction.user.mention,
+                princess_mention=princess_member.mention,
+                princess_name=princess_member.display_name,
                 formula=f"{dice_count}d{sides} x {float(multiplier):g} {float(additive_modifier):+g}",
                 base_sum=base_sum,
                 total=total,
@@ -185,6 +187,8 @@ def register_game_commands(
         sent_message = await interaction.followup.send(
             content=styles.get().tpl_wheel_result.format(
                 mention=interaction.user.mention,
+                princess_mention=princess_member.mention,
+                princess_name=princess_member.display_name,
                 result=result,
             ),
             file=file,

@@ -8,12 +8,14 @@ then set `{"active_style": "your_style_name"}` in style_config.json to activate 
 
 import importlib
 import json
+import random
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
 _style_config_file = Path("style_config.json")
 _active_kit: Optional["StylePack"] = None
+TemplateOrPool = str | list[str]
 
 
 @dataclass
@@ -46,14 +48,14 @@ class StylePack:
 
     # ── Message templates (use str.format(**kwargs)) ───────────────────────────
     # format_record_result — used by /recordsend and game Record button
-    tpl_tribute_positive: str           # {mention} {amount:.2f} {source_suffix}
+    tpl_tribute_positive: TemplateOrPool    # {mention} {amount:.2f} {source_suffix}
     tpl_tribute_negative: str           # {mention} {adj_amount:.2f} {source_suffix} {removed_amount:.2f}
     tpl_tribute_negative_remainder: str # {remaining:.2f}
     tpl_tribute_negative_rank: str      # {rank}
     tpl_tribute_role_warning: str       # (no placeholders)
 
     # SubSendClaimView approve — reimbursement-specific message
-    tpl_approval_reimburse: str         # {mention} {amount:.2f} {platform} {item}
+    tpl_approval_reimburse: TemplateOrPool  # {mention} {amount:.2f} {platform} {item}
 
     # Approved-by suffix appended to approval tributes messages
     tpl_approved_by: str                # {approver}
@@ -107,6 +109,20 @@ def get() -> "StylePack":
     if _active_kit is None:
         raise RuntimeError("No style loaded. Call styles.load_from_config() before accessing styles.")
     return _active_kit
+
+
+def choose_template(template_or_pool: TemplateOrPool) -> str:
+    """Return one template string, choosing randomly when a non-empty list is provided."""
+    if isinstance(template_or_pool, list):
+        if not template_or_pool:
+            raise ValueError("Template pool cannot be empty.")
+        return random.choice(template_or_pool)
+    return template_or_pool
+
+
+def render_template(template_or_pool: TemplateOrPool, **kwargs) -> str:
+    """Render either a single template string or a random template from a pool."""
+    return choose_template(template_or_pool).format(**kwargs)
 
 
 def load_from_config() -> "StylePack":

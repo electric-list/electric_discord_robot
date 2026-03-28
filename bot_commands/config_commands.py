@@ -2,6 +2,7 @@ import discord
 from discord import app_commands
 
 import bot_core as core
+from backup_google_drive import manager as backup_manager
 
 
 ACCESS_GROUP_CHOICES = [
@@ -21,6 +22,34 @@ def _format_role_mentions(role_ids: list[int]) -> str:
 
 
 def register_config_commands(client, admin_group_getter, common_group_getter):
+
+    @client.tree.command(
+        name="backupnow",
+        description="Upload progression_data.json to Google Drive now (for testing)",
+    )
+    @core.require_any_role(admin_group_getter)
+    async def backupnow(interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True, thinking=True)
+        ok, message = await backup_manager.trigger_backup_now(core.stats_file, force=True)
+        
+        if not ok and "GDRIVE_CLIENT_SECRET_JSON_PATH" in message:
+            setup_msg = (
+                f"{message}\n\n**Setup instructions for OAuth 2.0 backups:**\n"
+                "1. Go to https://console.cloud.google.com/\n"
+                "2. Create a new Google Cloud project\n"
+                "3. Enable Google Drive API (APIs & Services > Library > search Drive)\n"
+                "4. Go to APIs & Services > Credentials\n"
+                "5. Click Create Credentials > OAuth 2.0 Client ID\n"
+                "6. Choose Desktop application\n"
+                "7. Download JSON and save to your bot folder as `client_secret.json`\n"
+                "8. Set env var: `GDRIVE_CLIENT_SECRET_JSON_PATH=./client_secret.json`\n"
+                "9. Also set: `GDRIVE_BACKUP_ENABLED=true`\n"
+                "10. Run `/backupnow` again — it will open a browser to authorize\n"
+            )
+            await interaction.followup.send(setup_msg, ephemeral=True)
+        else:
+            prefix = "Backup completed." if ok else "Backup test failed."
+            await interaction.followup.send(f"{prefix}\n{message}", ephemeral=True)
 
     @client.tree.command(
         name="princessrole",
@@ -292,6 +321,7 @@ def register_config_commands(client, admin_group_getter, common_group_getter):
         )
 
     return {
+        "backupnow": backupnow,
         "princessrole": princessrole,
         "rankupdateschannel": rankupdateschannel,
         "tributeschannel": tributeschannel,
