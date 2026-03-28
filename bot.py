@@ -10,7 +10,7 @@ from bot_commands.config_commands import register_config_commands
 from bot_commands.game_commands import register_game_commands
 from bot_commands.progression_commands import register_progression_commands
 from bot_commands.request_commands import register_request_commands
-from errorhandling import register_error_handlers
+from errorhandling import register_error_handlers, register_tree_error_handler, register_tree_guild_filter
 
 # Load style before command registration so jokes and templates are available at startupp.
 styles.load_from_config()
@@ -39,6 +39,7 @@ client = JordansBot(command_prefix="!", intents=intents)
 # --- load config ---
 token = os.getenv("TOKEN")
 guild_id_raw = os.getenv("GUILD_ID")
+configured_guild_id = int(guild_id_raw) if guild_id_raw and guild_id_raw.isdigit() else None
 commands_synced = False
 
 # --- command registration ---
@@ -50,6 +51,8 @@ all_commands.update(register_progression_commands(client, admin_group_getter, co
 all_commands.update(register_game_commands(client, admin_group_getter, common_group_getter))
 all_commands.update(register_request_commands(client, admin_group_getter, common_group_getter))
 register_error_handlers(all_commands, core.send_interaction_error)
+register_tree_error_handler(client, core.send_interaction_error)
+register_tree_guild_filter(client, configured_guild_id)
 
 
 # --- bot events ---
