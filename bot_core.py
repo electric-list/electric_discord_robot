@@ -1135,8 +1135,22 @@ class RecordSendFromGameView(discord.ui.View):
             await interaction.response.send_message("Message not found.", ephemeral=True)
             return
 
+        try:
+            await interaction.message.delete()
+        except discord.Forbidden:
+            await interaction.response.send_message(
+                "I don't have permission to delete this message (Missing Access).",
+                ephemeral=True,
+            )
+            return
+        except discord.HTTPException:
+            await interaction.response.send_message(
+                "I couldn't delete this message due to a Discord API error.",
+                ephemeral=True,
+            )
+            return
+
         remove_pending_view(interaction.message.id, "game")
-        await interaction.message.delete()
 
 
 class SendProofModal(discord.ui.Modal):
@@ -1350,8 +1364,22 @@ class RequestView(discord.ui.View):
             await interaction.response.send_message("Message not found.", ephemeral=True)
             return
 
+        try:
+            await interaction.message.delete()
+        except discord.Forbidden:
+            await interaction.response.send_message(
+                "I don't have permission to delete this request message (Missing Access).",
+                ephemeral=True,
+            )
+            return
+        except discord.HTTPException:
+            await interaction.response.send_message(
+                "I couldn't delete this request message due to a Discord API error.",
+                ephemeral=True,
+            )
+            return
+
         remove_pending_view(interaction.message.id, "request")
-        await interaction.message.delete()
         await interaction.response.defer()
 
 
@@ -1396,7 +1424,28 @@ class SubSendClaimView(discord.ui.View):
     async def approve_button(
         self, interaction: discord.Interaction, _button: discord.ui.Button
     ):
-        if not isinstance(interaction.user, discord.Member) or not has_any_role_id(interaction.user, get_access_role_ids("admin")):
+        if not isinstance(interaction.user, discord.Member):
+            await interaction.response.send_message(
+                "Could not resolve member.",
+                ephemeral=True,
+            )
+            return
+
+        if self.princess_user_id is not None:
+            if interaction.user.id != self.princess_user_id:
+                await interaction.response.send_message(
+                    "Only the selected princess can approve this request.",
+                    ephemeral=True,
+                )
+                return
+            if not is_princess_member(interaction.user):
+                await interaction.response.send_message(
+                    "Only a member with the princess role can approve this request.",
+                    ephemeral=True,
+                )
+                return
+        elif not has_any_role_id(interaction.user, get_access_role_ids("admin")):
+            # Backward compatibility for older pending views without princess attribution.
             await interaction.response.send_message(
                 "Only members with an admin access role can approve this request.",
                 ephemeral=True,
@@ -1506,8 +1555,22 @@ class SubSendClaimView(discord.ui.View):
             await interaction.response.send_message("Message not found.", ephemeral=True)
             return
 
+        try:
+            await interaction.message.delete()
+        except discord.Forbidden:
+            await interaction.response.send_message(
+                "I don't have permission to delete this request message (Missing Access).",
+                ephemeral=True,
+            )
+            return
+        except discord.HTTPException:
+            await interaction.response.send_message(
+                "I couldn't delete this request message due to a Discord API error.",
+                ephemeral=True,
+            )
+            return
+
         remove_pending_view(interaction.message.id, "sub_claim")
-        await interaction.message.delete()
         await interaction.response.defer()
 
 
